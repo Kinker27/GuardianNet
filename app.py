@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # --- INITIALIZE CLOUD AI ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("AIzaSyBb5NOCd4qDaKVSwf-4-GREXsnjvvWWbmE")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     gemini_model = genai.GenerativeModel('gemini-1.5-flash')
