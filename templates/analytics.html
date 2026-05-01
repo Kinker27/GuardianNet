@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Dashboard Specific Styling */
+    .dashboard-stats { display: flex; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .stat-card { flex: 1; min-width: 200px; background: #ffffff; padding: 1.5rem; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.02); text-align: center; }
+    .stat-value { font-size: 2.5rem; font-weight: 800; color: #1e3a8a; margin-top: 0.5rem; }
+    .stat-label { font-size: 0.85rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    
+    .table-container { background: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background-color: #f8fafc; padding: 1rem; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 1rem; font-size: 0.95rem; color: #1e293b; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background-color: #f8fafc; }
+    
+    /* Dynamic Badges */
+    .badge { padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; white-space: nowrap; }
+    .badge-danger { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-success { background-color: #dcfce3; color: #15803d; border: 1px solid #86efac; }
+    .badge-neutral { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+</style>
+
+<div class="container" style="max-width: 1000px;">
+    <div class="tool-header">
+        <h1>Command Center Analytics</h1>
+        <p style="color: var(--text-muted); font-size: 1.2rem;">Live system telemetry and scanning history.</p>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-label">Total System Scans</div>
+            <div class="stat-value">{{ total_scans }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Misinformation Detected</div>
+            <div class="stat-value" style="color: #b91c1c;">{{ total_fakes }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">API Status</div>
+            <div class="stat-value" style="color: #15803d; font-size: 1.5rem; line-height: 2.5rem; margin-top: 1rem;">🟢 Online</div>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom: 1rem; color: #1f2937; font-size: 1.2rem;">Recent Scan Activity</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Module</th>
+                    <th>Content Snippet</th>
+                    <th>Verdict</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="color: #64748b; font-size: 0.85rem; white-space: nowrap;">{{ log[1] }}</td>
+                    <td><strong>{{ log[2] }}</strong></td>
+                    <td style="font-style: italic; color: #475569;">"{{ log[3] }}"</td>
+                    <td>
+                        {% if "Fake" in log[4] or "Toxic" in log[4] %}
+                            <span class="badge badge-danger">{{ log[4][:20] }}...</span>
+                        {% elif "Safe" in log[4] or "Real" in log[4] %}
+                            <span class="badge badge-success">{{ log[4][:20] }}...</span>
+                        {% else %}
+                            <span class="badge badge-neutral">{{ log[4][:20] }}...</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #64748b; padding: 3rem;">
+                        No logs recorded yet. Run a scan in the Toxicity or Credibility engines to see data here!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

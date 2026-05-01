@@ -1,0 +1,9 @@
+env/
+__pycache__/
+guardian_logs.db
+.DS_Store
+*.csv
+*.ipynb
+models/*.pt
+models/*.joblibmodels/*.pt
+models/*.joblib

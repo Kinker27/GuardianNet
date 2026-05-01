@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .hero { text-align: center; padding: 6rem 5% 4rem; max-width: 900px; margin: 0 auto; }
+    .hero h1 { font-size: 4.5rem; font-weight: 700; line-height: 1.1; letter-spacing: -2px; margin-bottom: 1.5rem; }
+    .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 3rem; }
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; }
+    .btn-hero { padding: 1rem 2rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 1.1rem; transition: transform 0.1s; }
+    .btn-dark { background-color: var(--text-dark); color: white; }
+    .btn-outline { background-color: transparent; border: 2px solid var(--border); color: var(--text-dark); }
+    .btn-hero:hover { transform: translateY(-2px); }
+
+    /* Info Sections */
+    .section-title { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; letter-spacing: -1px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 6rem; }
+    
+    .info-card { background: var(--surface); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); }
+    .info-card h3 { font-size: 1.25rem; margin-bottom: 1rem; }
+    .info-card p { color: var(--text-muted); }
+
+    /* Reviews */
+    .review-section { background-color: var(--text-dark); color: white; padding: 6rem 5%; }
+    .review-card { background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+    .stars { color: #fbbf24; font-size: 1.5rem; margin-bottom: 1rem; }
+    .reviewer { margin-top: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .avatar { width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .review-text { font-style: italic; color: #d1d5db; }
+</style>
+
+<div class="hero">
+    <h1>Detect false claims and hateful content.</h1>
+    <p>Cut through the noise. Our machine learning pipeline identifies misinformation and hate speech in seconds, giving you clarity when you need it most.</p>
+    <div class="hero-buttons">
+        <a href="/hate" class="btn-hero btn-dark">Test Toxicity Engine</a>
+        <a href="/fake" class="btn-hero btn-outline">Verify Fake News</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2 class="section-title">Why this matters now</h2>
+    <div class="grid-3">
+        <div class="info-card">
+            <h3>Build Confidence</h3>
+            <p>Users stay longer when they feel safe from false claims, hostile speech, and toxic platform manipulation.</p>
+        </div>
+        <div class="info-card">
+            <h3>Handle Growth</h3>
+            <p>Automated detection means your moderation team can scale effortlessly as your daily active users increase.</p>
+        </div>
+        <div class="info-card">
+            <h3>Instant Response</h3>
+            <p>Milliseconds matter when harmful content spreads. Our API pipeline catches threats before they take root.</p>
+        </div>
+    </div>
+</div>
+
+<div class="review-section">
+    <div class="container" style="padding-top: 0; padding-bottom: 0;">
+        <h2 class="section-title" style="color: white;">Trusted by Moderators</h2>
+        <div class="grid-3">
+            <div class="review-card">
+                <div class="stars">★★★★★</div>
+                <p class="review-text">"This tool saved us hours of manual fact-checking every single day. The API integration was seamless."</p>
+                <div class="reviewer">
+                    <div class="avatar">SC</div>
+                    <div><strong>Sarah Chen</strong><br><span style="color:#9ca3af; font-size:0.85rem;">Editor, Global News</span></div>
+                </div>
+            </div>
+            <div class="review-card">
+                <div class="stars">★★★★★</div>
+                <p class="review-text">"Our moderation team finally has the backup they needed. The OCR image scanning feature is an absolute gamechanger."</p>
+                <div class="reviewer">
+                    <div class="avatar">MW</div>
+                    <div><strong>Marcus Webb</strong><br><span style="color:#9ca3af; font-size:0.85rem;">Community Manager</span></div>
+                </div>
+            </div>
+            <div class="review-card">
+                <div class="stars">★★★★★</div>
+                <p class="review-text">"The accuracy is remarkable. False positives dropped significantly after implementing the new Deep Learning models."</p>
+                <div class="reviewer">
+                    <div class="avatar">ER</div>
+                    <div><strong>Elena Rossi</strong><br><span style="color:#9ca3af; font-size:0.85rem;">Director, Research Lab</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

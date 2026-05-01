@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .protocol-card { margin-top: 1.5rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 1.5rem; text-align: left; animation: slideUp 0.4s ease-out; }
+    .protocol-header { display: flex; align-items: center; gap: 0.5rem; color: #b45309; font-weight: 700; margin-bottom: 1rem; font-size: 1.1rem; }
+    .protocol-list { list-style: none; padding: 0; }
+    .protocol-list li { margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 0.75rem; color: #92400e; font-size: 0.95rem; }
+    .protocol-list li::before { content: "⚡"; font-size: 1rem; }
+    .btn-action { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background-color: #b45309; color: white; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .btn-action:hover { background-color: #92400e; }
+</style>
+
+<div class="container">
+    <div class="tool-header">
+        <h1>Toxicity Engine</h1>
+        <p style="color: var(--text-muted); font-size: 1.2rem;">Identify hostile speech, slurs, and explicit content natively.</p>
+    </div>
+
+    <div class="module-card">
+        <form action="/analyze_hate" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Analyze Text or Social Media Post</label>
+                <textarea name="text_input" rows="5" placeholder="Paste suspicious text here..."></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                <label>Or scan text from an image (OCR)</label>
+                <input type="file" name="image_input" accept="image/png, image/jpeg">
+            </div>
+            <button type="submit" class="btn-main" style="margin-top: 1.5rem;">Run Security Scan</button>
+        </form>
+
+        {% if result %}
+            {% if "Toxic" in result or "Hate" in result %}
+                <div class="result-box result-danger">⚠️ {{ result }}</div>
+                
+                {% if action_steps %}
+                <div class="protocol-card">
+                    <div class="protocol-header">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Recommended Moderation Protocol
+                    </div>
+                    <ul class="protocol-list">
+                        {% for step in action_steps %}
+                            <li>{{ step }}</li>
+                        {% endfor %}
+                    </ul>
+                    <button class="btn-action">Execute All Actions</button>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="result-box result-success">✓ {{ result }}</div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

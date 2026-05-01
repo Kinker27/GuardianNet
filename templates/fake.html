@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .protocol-card { margin-top: 1.5rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 1.5rem; text-align: left; animation: slideUp 0.4s ease-out; }
+    .protocol-header { display: flex; align-items: center; gap: 0.5rem; color: #b45309; font-weight: 700; margin-bottom: 1rem; font-size: 1.1rem; }
+    .protocol-list { list-style: none; padding: 0; }
+    .protocol-list li { margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 0.75rem; color: #92400e; font-size: 0.95rem; }
+    .protocol-list li::before { content: "🛡️"; font-size: 1rem; }
+    .btn-action { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background-color: #b45309; color: white; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .btn-action:hover { background-color: #92400e; }
+</style>
+
+<div class="container">
+    <div class="tool-header">
+        <h1>Credibility Engine</h1>
+        <p style="color: var(--text-muted); font-size: 1.2rem;">Verify news snippets against massive datasets of misinformation.</p>
+    </div>
+
+    <div class="module-card">
+        <form action="/analyze_fake" method="POST">
+            <div class="form-group">
+                <label>Verify News Article or Headline</label>
+                <textarea name="text_input" rows="8" placeholder="Paste an article snippet or headline here to verify its authenticity..."></textarea>
+            </div>
+            <button type="submit" class="btn-main" style="background-color: #2563eb;">Verify Authenticity</button>
+        </form>
+
+        {% if fake_result %}
+            {% if "Error" in fake_result or "Failed" in fake_result %}
+                <div class="result-box" style="background-color: #fef3c7; border: 1px solid #f59e0b; color: #b45309;">
+                    ⚠️ {{ fake_result }}
+                </div>
+            {% elif "Fake" in fake_result or "Unreliable" in fake_result %}
+                <div class="result-box result-danger">⚠️ {{ fake_result }}</div>
+                
+                {% if action_steps %}
+                <div class="protocol-card">
+                    <div class="protocol-header">🛡️ Recommended Moderation Protocol</div>
+                    <ul class="protocol-list">
+                        {% for step in action_steps %}<li>{{ step }}</li>{% endfor %}
+                    </ul>
+                    <button class="btn-action" style="background-color: #1e3a8a;">Apply Interventions</button>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="result-box result-success">✓ {{ fake_result }}</div>
+            {% endif %}
+            
+            {% if reasoning %}
+            <div style="margin-top: 1.5rem; padding: 1rem; background-color: #f3f4f6; border-left: 4px solid #3b82f6; border-radius: 6px;">
+                <h4 style="margin-bottom: 0.5rem; color: #1f2937; font-size: 1rem;">AI Fact-Check Analysis:</h4>
+                <p style="color: #4b5563; font-size: 0.95rem;">{{ reasoning }}</p>
+                
+                {% if source_url %}
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                    <a href="{{ source_url }}" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; background-color: #e0f2fe; color: #0284c7; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: background-color 0.2s;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        Read Authenticated Source
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

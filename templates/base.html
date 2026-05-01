@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuardianNet | Linguistic Threat Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-dark: #111827;
+            --text-muted: #6b7280;
+            --primary: #111827; /* Deep black/blue like video */
+            --primary-hover: #374151;
+            --accent: #2563eb;
+            --surface: #ffffff;
+            --border: #e5e7eb;
+            --danger-bg: #fef2f2;
+            --danger-text: #dc2626;
+            --danger-border: #fca5a5;
+            --success-bg: #f0fdf4;
+            --success-text: #16a34a;
+            --success-border: #86efac;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-dark); line-height: 1.6; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* Navigation */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 5%; background-color: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; color: var(--text-dark); text-decoration: none; }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-links a { text-decoration: none; color: var(--text-muted); font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text-dark); }
+        .nav-btn { background-color: var(--primary); color: white !important; padding: 0.5rem 1rem; border-radius: 6px; }
+
+        /* General Layout */
+        main { flex: 1; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 4rem 5%; }
+        
+        /* Shared Tool Styles */
+        .tool-header { text-align: center; margin-bottom: 3rem; }
+        .tool-header h1 { font-size: 3rem; font-weight: 700; letter-spacing: -1px; margin-bottom: 1rem; }
+        .module-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 3rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); max-width: 800px; margin: 0 auto; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+        textarea { width: 100%; background-color: var(--bg-color); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-size: 1rem; color: var(--text-dark); resize: vertical; }
+        textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        button.btn-main { width: 100%; background-color: var(--primary); color: white; border: none; border-radius: 8px; padding: 1rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        button.btn-main:hover { background-color: var(--primary-hover); }
+
+        /* Results */
+        .result-box { margin-top: 2rem; padding: 1.5rem; border-radius: 8px; font-weight: 600; text-align: center; font-size: 1.1rem; }
+        .result-danger { background-color: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger-text); }
+        .result-success { background-color: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text); }
+
+        footer { background-color: var(--text-dark); color: #9ca3af; text-align: center; padding: 3rem 5%; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="logo">GuardianNet</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/hate">Toxicity Engine</a>
+            <a href="/fake">Credibility Engine</a>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2026 GuardianNet Core. All rights reserved. | Deployed & Maintained by Core Engineering.</p>
+    </footer>
+
+</body>
+</html>
