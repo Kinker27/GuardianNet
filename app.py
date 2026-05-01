@@ -18,7 +18,7 @@ gemini_model = None
 if GEMINI_API_KEY and GEMINI_API_KEY.strip() != "":
     try:
         genai.configure(api_key=GEMINI_API_KEY.strip())
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_model = genai.GenerativeModel('gemini-2.5-flash')
         print("✅ Gemini AI successfully connected!")
     except Exception as e:
         print(f"❌ Failed to configure Gemini: {e}")
