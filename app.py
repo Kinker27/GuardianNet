@@ -11,7 +11,7 @@ CORS(app)
 # --- INITIALIZE CLOUD AI ---
 GEMINI_API_KEY = os.getenv("AIzaSyBb5NOCd4qDaKVSwf-4-GREXsnjvvWWbmE")
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    genai.configure(api_key=AIzaSyBb5NOCd4qDaKVSwf-4-GREXsnjvvWWbmE)
     gemini_model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     print("WARNING: GEMINI_API_KEY not found in environment variables!")
