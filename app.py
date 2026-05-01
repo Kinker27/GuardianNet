@@ -42,11 +42,11 @@ init_db()
 def home():
     return render_template('index.html')
 
-@app.route('/toxicity')
+@app.route('/hate')
 def toxicity():
     return render_template('hate.html')
 
-@app.route('/credibility')
+@app.route('/fake')
 def credibility():
     return render_template('fake.html')
 
