@@ -9,12 +9,21 @@ app = Flask(__name__)
 CORS(app)
 
 # --- INITIALIZE CLOUD AI ---
-GEMINI_API_KEY = os.getenv("AIzaSyBb5NOCd4qDaKVSwf-4-GREXsnjvvWWbmE")
-if GEMINI_API_KEY:
-    genai.configure(api_key=AIzaSyBb5NOCd4qDaKVSwf-4-GREXsnjvvWWbmE)
-    gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+# Safely pull the key from Render's environment variables
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Create a global placeholder so it NEVER throws a NameError again
+gemini_model = None
+
+if GEMINI_API_KEY and GEMINI_API_KEY.strip() != "":
+    try:
+        genai.configure(api_key=GEMINI_API_KEY.strip())
+        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        print("✅ Gemini AI successfully connected!")
+    except Exception as e:
+        print(f"❌ Failed to configure Gemini: {e}")
 else:
-    print("WARNING: GEMINI_API_KEY not found in environment variables!")
+    print("❌ CRITICAL WARNING: GEMINI_API_KEY is missing from the environment!")
 
 # --- DATABASE SETUP ---
 def init_db():
@@ -72,6 +81,10 @@ def analyze_hate():
 
     cleaned_text = core_engine.process_input(user_text=user_text) if user_text else ""
 
+    # Safety check before pinging Gemini
+    if gemini_model is None:
+         return render_template('hate.html', result="SYSTEM ERROR: API Key missing from server environment.", cleaned_text=cleaned_text)
+
     # Build payload for Gemini
     payload = [f"""
     You are an administrative content moderation AI. Analyze this input for toxicity, hate speech, or cyberbullying.
@@ -113,7 +126,6 @@ def analyze_hate():
         log_to_db("Toxicity_Cloud", cleaned_text, result)
         return render_template('hate.html', result=result, cleaned_text=cleaned_text, action_steps=action_steps)
     except Exception as e:
-        # We now print the exact error string so we can debug if it fails again
         return render_template('hate.html', result=f"Cloud AI Error: {str(e)}", cleaned_text=cleaned_text)
 
 # --- MODULE 2: CREDIBILITY ENGINE ---
@@ -131,6 +143,10 @@ def analyze_fake():
         return render_template('fake.html', fake_result="Please enter text or upload an image.", cleaned_text="")
 
     cleaned_text = core_engine.process_input(user_text=user_text) if user_text else ""
+
+    # Safety check before pinging Gemini
+    if gemini_model is None:
+         return render_template('fake.html', fake_result="SYSTEM ERROR: API Key missing from server environment.", cleaned_text=cleaned_text)
 
     prompt = f"""
     You are an expert fact-checking AI. Analyze this input for misinformation.
