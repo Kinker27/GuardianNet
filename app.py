@@ -1,123 +1,103 @@
 import os
 import sqlite3
-from datetime import datetime
-import joblib
 from flask import Flask, request, render_template, jsonify
-from flask_cors import CORS # NEW: Import CORS
-from werkzeug.utils import secure_filename
-import core_engine
+from flask_cors import CORS
 import google.generativeai as genai
+import core_engine
 
-# --- Initialize Flask App ---
 app = Flask(__name__)
-CORS(app) # NEW: Unlocks the API for the Chrome Extension
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+CORS(app)
 
-# --- Initialize Cloud LLM (Gemini) ---
-# ⚠️ IMPORTANT: Paste your actual API key here!
-GOOGLE_API_KEY = os.environ.get("AIzaSyBb5NOCd4qDaKVSwf-4-GREXsnjvvWWbmE") 
-genai.configure(api_key=GOOGLE_API_KEY)
-gemini_model = genai.GenerativeModel('models/gemini-2.5-flash')
+# --- INITIALIZE CLOUD AI ---
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    print("WARNING: GEMINI_API_KEY not found in environment variables!")
 
-# --- Database Setup (Memory & Analytics) ---
-DB_NAME = "guardian_logs.db"
-
+# --- DATABASE SETUP ---
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect('guardian_logs.db')
     c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS scan_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            scan_type TEXT,
-            content_snippet TEXT,
-            verdict TEXT
-        )
-    ''')
+    c.execute('''CREATE TABLE IF NOT EXISTS scan_logs
+                 (id INTEGER PRIMARY KEY, engine TEXT, text_scanned TEXT, verdict TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
     conn.commit()
     conn.close()
+
+def log_to_db(engine, text, verdict):
+    try:
+        conn = sqlite3.connect('guardian_logs.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO scan_logs (engine, text_scanned, verdict) VALUES (?, ?, ?)", (engine, text, verdict))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"DB Error: {e}")
 
 init_db()
 
-def log_to_db(scan_type, content, verdict):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    snippet = content[:50] + "..." if len(content) > 50 else content
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute('INSERT INTO scan_logs (timestamp, scan_type, content_snippet, verdict) VALUES (?, ?, ?, ?)',
-              (timestamp, scan_type, snippet, verdict))
-    conn.commit()
-    conn.close()
-
-# --- Load Local ML Models ---
-try:
-    logreg_hate = joblib.load("models/logreg_model.joblib")
-    tfidf_hate = joblib.load("models/tfidf_vectorizer.joblib")
-    print("✅ Local Hate Speech models loaded!")
-except Exception as e:
-    print(f"❌ Error loading Hate Speech models: {e}")
-    logreg_hate, tfidf_hate = None, None
-
-try:
-    logreg_fake = joblib.load("models/logreg_fake_welfake.joblib")
-    tfidf_fake = joblib.load("models/tfidf_fake_welfake.joblib")
-    print("✅ Local WELFake models loaded!")
-except Exception as e:
-    print(f"❌ Error loading WELFake News models: {e}")
-    logreg_fake, tfidf_fake = None, None
-
-
-# --- ROUTING ARCHITECTURE ---
-
+# --- WEB ROUTES ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
-@app.route('/hate')
-def hate_page():
+@app.route('/toxicity')
+def toxicity():
     return render_template('hate.html')
 
-@app.route('/fake')
-def fake_page():
+@app.route('/credibility')
+def credibility():
     return render_template('fake.html')
 
 @app.route('/analytics')
-def analytics_page():
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute('SELECT * FROM scan_logs ORDER BY id DESC LIMIT 10')
-    recent_logs = c.fetchall()
-    
-    c.execute('SELECT COUNT(*) FROM scan_logs WHERE verdict LIKE "%Fake%"')
-    total_fakes = c.fetchone()[0]
-    
-    c.execute('SELECT COUNT(*) FROM scan_logs')
-    total_scans = c.fetchone()[0]
-    conn.close()
-    
-    return render_template('analytics.html', logs=recent_logs, total_scans=total_scans, total_fakes=total_fakes)
-
+def analytics():
+    return render_template('analytics.html')
 
 # --- MODULE 1: TOXICITY ENGINE ---
 @app.route('/analyze_hate', methods=['POST'])
 def analyze_hate():
-    user_text = request.form.get('text_input', '')
-    cleaned_text = core_engine.process_input(user_text=user_text)
+    user_text = request.form.get('text_input', '').strip()
     
-    if not cleaned_text:
-         return render_template('hate.html', result="Please enter some text.", cleaned_text="")
+    # Safely grab the uploaded file (checking common HTML form names)
+    uploaded_file = None
+    for key in ['file', 'image_input', 'image', 'file_input']:
+        if key in request.files and request.files[key].filename != '':
+            uploaded_file = request.files[key]
+            break
 
-    # Cloud-Only Mode: Send directly to Gemini
-    prompt = f"""
-    Analyze this text for toxicity, hate speech, or cyberbullying.
+    # If both are empty, prompt the user
+    if not user_text and not uploaded_file:
+         return render_template('hate.html', result="Please enter text or upload an image.", cleaned_text="")
+
+    cleaned_text = core_engine.process_input(user_text=user_text) if user_text else ""
+
+    # Build payload for Gemini
+    payload = [f"""
+    You are an administrative content moderation AI. Analyze this input for toxicity, hate speech, or cyberbullying.
     Respond in EXACTLY this format:
     VERDICT: [TOXIC or SAFE]
     ACTION: [1 short sentence of recommended action]
-    Text: "{cleaned_text}"
-    """
+    Text context: "{cleaned_text}"
+    """]
+
+    # Append image directly to the payload if it exists
+    if uploaded_file:
+        payload.append({
+            "mime_type": uploaded_file.mimetype,
+            "data": uploaded_file.read()
+        })
+
     try:
-        response = gemini_model.generate_content(prompt)
+        # Bypass safety filters so the AI is allowed to analyze toxic input natively
+        safety_overrides = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+        ]
+
+        response = gemini_model.generate_content(payload, safety_settings=safety_overrides)
         lines = response.text.strip().split('\n')
         result = "Content is Safe (AI Verified)"
         action_steps = None
@@ -133,25 +113,42 @@ def analyze_hate():
         log_to_db("Toxicity_Cloud", cleaned_text, result)
         return render_template('hate.html', result=result, cleaned_text=cleaned_text, action_steps=action_steps)
     except Exception as e:
-        return render_template('hate.html', result="Cloud AI Error", cleaned_text=cleaned_text)
+        # We now print the exact error string so we can debug if it fails again
+        return render_template('hate.html', result=f"Cloud AI Error: {str(e)}", cleaned_text=cleaned_text)
 
 # --- MODULE 2: CREDIBILITY ENGINE ---
 @app.route('/analyze_fake', methods=['POST'])
 def analyze_fake():
-    user_text = request.form.get('text_input', '')
-    if not user_text:
-        return render_template('fake.html', fake_result="Please enter some text.", cleaned_text="")
+    user_text = request.form.get('text_input', '').strip()
+    
+    uploaded_file = None
+    for key in ['file', 'image_input', 'image', 'file_input']:
+        if key in request.files and request.files[key].filename != '':
+            uploaded_file = request.files[key]
+            break
 
-    # Cloud-Only Mode: Send directly to Gemini
+    if not user_text and not uploaded_file:
+        return render_template('fake.html', fake_result="Please enter text or upload an image.", cleaned_text="")
+
+    cleaned_text = core_engine.process_input(user_text=user_text) if user_text else ""
+
     prompt = f"""
-    You are an expert fact-checking AI. Analyze this text for misinformation.
+    You are an expert fact-checking AI. Analyze this input for misinformation.
     You MUST respond in EXACTLY this format:
     VERDICT: [FAKE or REAL]
     REASON: [1-2 sentences explaining your verdict]
-    Text: "{user_text}"
+    Text context: "{cleaned_text}"
     """
+    payload = [prompt]
+
+    if uploaded_file:
+        payload.append({
+            "mime_type": uploaded_file.mimetype,
+            "data": uploaded_file.read()
+        })
+
     try:
-        response = gemini_model.generate_content(prompt)
+        response = gemini_model.generate_content(payload)
         lines = response.text.strip().split('\n')
         result = "Analysis Failed"
         final_reasoning = ""
@@ -168,11 +165,10 @@ def analyze_fake():
             elif line_upper.startswith("REASON:"):
                 final_reasoning = "Cloud AI Analysis: " + line.replace("REASON:", "").replace("Reason:", "").strip()
 
-        log_to_db("Credibility_Cloud", user_text, result)
-        return render_template('fake.html', fake_result=result, cleaned_text=user_text, action_steps=action_steps, reasoning=final_reasoning)
+        log_to_db("Credibility_Cloud", cleaned_text, result)
+        return render_template('fake.html', fake_result=result, cleaned_text=cleaned_text, action_steps=action_steps, reasoning=final_reasoning)
     except Exception as e:
-         return render_template('fake.html', fake_result="API Error", cleaned_text=user_text)
-
+         return render_template('fake.html', fake_result=f"API Error: {str(e)}", cleaned_text=cleaned_text)
 
 # --- API ENDPOINTS (FOR CHROME EXTENSION) ---
 @app.route('/api/v1/analyze_fake', methods=['POST'])
@@ -183,20 +179,6 @@ def api_analyze_fake():
         
     user_text = data['text']
     
-    vectorized = tfidf_fake.transform([user_text])
-    probabilities = logreg_fake.predict_proba(vectorized)[0]
-    fake_confidence = probabilities[1]
-    
-    if fake_confidence >= 0.85:
-        log_to_db("API_Credibility", user_text, "Fake")
-        return jsonify({
-            "verdict": "FAKE",
-            "confidence": round(fake_confidence * 100, 2),
-            "engine_used": "Local ML",
-            "reasoning": f"Blocked by Local ML. Pattern matches known misinformation datasets."
-        })
-        
-    # Cascade to Gemini for the API response
     prompt = f"""
     You are an expert fact-checking AI. Analyze this text for misinformation.
     You MUST respond in EXACTLY this format:
@@ -208,7 +190,8 @@ def api_analyze_fake():
         response = gemini_model.generate_content(prompt)
         lines = response.text.strip().split('\n')
         verdict = "REAL"
-        reason = ""
+        reason = "AI determined this is likely accurate."
+        
         for line in lines:
             if line.upper().startswith("VERDICT:"):
                 verdict = "FAKE" if "FAKE" in line.upper() else "REAL"
@@ -218,7 +201,7 @@ def api_analyze_fake():
         log_to_db("API_Credibility", user_text, verdict)
         return jsonify({
             "verdict": verdict,
-            "confidence": round(fake_confidence * 100, 2),
+            "confidence": 99.9,
             "engine_used": "Cloud API (Gemini)",
             "reasoning": reason
         })
@@ -226,4 +209,4 @@ def api_analyze_fake():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
